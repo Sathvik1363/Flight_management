@@ -1,0 +1,105 @@
+var express = require('express')
+var cors = require('cors')
+var { MongoClient } = require('mongodb')
+var mongoose = require('mongoose');
+
+var flight = express();
+flight.use(cors());
+flight.use(express.json());
+
+
+const url = "mongodb://localhost:27017/Flight_Management"
+const  clienturl = new MongoClient(url);
+
+flight.post('/add',async(req,res)=>{
+    let body =  req['body'];
+    await clienturl.connect();
+    const dbase = clienturl.db('Flight_Management');
+    const collection = dbase.collection( 'flights' ) ;
+    let data = {
+        "name":body.name,
+        "startlocation":body.startlocation,
+        "destination":body.destination,
+        "expenses":body.expenses,
+        // "Travel_date" : body.Travel_date
+    }
+    await collection.insertOne(data);
+    res.json({"message":"Flight Data is inserted"})
+    res.end();
+})
+//-------------------------search flight --------------------------------
+
+flight.get('/usersearch',async(req,res)=>{
+    let query = req['query'];
+    // console.log(query);
+    let from = query['startlocation'];
+    let to = query['destination'];
+    await clienturl.connect();
+    // console.log(from , to);
+    const datab = clienturl.db("Flight_Management");
+    const coll = datab.collection("flights");
+    let list = await coll.find({"startlocation": from , "destination": to}).toArray();
+    // res.json({"message":"Data fetched successfully"})
+    res.json(list);
+    console.log(list);
+    res.end();
+
+});
+flight.get("/flightlist", async (req, res) => {
+    await clienturl.connect(); 
+    const database = clienturl.db("Flight_Management");
+    const fly = database.collection("flights"); 
+    let list = await fly.find().toArray();
+    await list.find({
+        "Date": {        
+          "$gte":new Date()
+        }
+      }
+)
+    res.json(list);
+    res.end("this is get method");
+  });
+//-----------------------Mongoose---------------------------
+const flights = mongoose.model('flights', {"name": String, "startlocation": String, "destination": String, "expenses": Number, "Date":Date});
+
+flight.post('/update', async (req, res) => {
+    let body = req.body;
+    await mongoose.connect("mongodb://localhost:27017/Flight_Management");
+    const addflight = new flights({
+        "name":body.name,
+        "startlocation":body.startlocation,
+        "destination":body.destination,
+        "expenses":body.expenses,
+        "Date" : body.Date,
+    });
+    await addflight.save();
+    res.json({"message":"Updated Successfully"})
+    res.end();
+})
+//-----------------Future Flights---------------------
+
+
+flight.get('/getflight',async(req,res)=>{
+    await mongoose.connect("mongodb://localhost:27017/Flight_Management");
+    var data = await flights.find();
+    res.json(data);
+    // res.json({"message":"data fetched successfully"});
+    res.end();
+})
+
+//-------------Delete By Id---------------------
+flight.delete('/delete',async(req,res)=>{
+    let query  = req['query'];
+    await mongoose.connect("mongodb://localhost:27017/Flight_Management");
+    let fli = new flights({"_id":query['id']});
+    await fli.deleteOne();
+    res.json({"Message":"Deleted successfully"});
+    res.end();
+
+})
+
+
+flight.listen(8001,()=>{
+    console.log("server started at 8001");
+})
+

@@ -1,0 +1,22 @@
+h1{
+    text-align: center;
+}
+.admin{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    /* margin-top: 100px; */
+}
+.admin h2{
+    margin-top: 50px;
+}
+.admin input{
+    margin-top: 10px;
+
+}
+.admin button{
+    margin-top: 10px;
+}
+
+
